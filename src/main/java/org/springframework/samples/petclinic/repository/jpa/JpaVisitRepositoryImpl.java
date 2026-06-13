@@ -15,6 +15,8 @@
  */
 package org.springframework.samples.petclinic.repository.jpa;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -60,25 +62,41 @@ public class JpaVisitRepositoryImpl implements VisitRepository {
     @Override
     @SuppressWarnings("unchecked")
     public List<Visit> findByPetId(Integer petId) {
-        Query query = this.em.createQuery("SELECT v FROM Visit v where v.pet.id= :id");
+        Query query = this.em.createQuery("SELECT v FROM Visit v where v.pet.id = :id AND v.deletedAt IS NULL");
         query.setParameter("id", petId);
+        return query.getResultList();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Visit> findByPetIdAndDateBetween(Integer petId, LocalDate from, LocalDate to) {
+        Query query = this.em.createQuery(
+            "SELECT v FROM Visit v WHERE v.pet.id = :id AND v.date BETWEEN :from AND :to AND v.deletedAt IS NULL");
+        query.setParameter("id", petId);
+        query.setParameter("from", from);
+        query.setParameter("to", to);
         return query.getResultList();
     }
 
 	@Override
 	public Visit findById(int id) throws DataAccessException {
-		return this.em.find(Visit.class, id);
+		Visit v = this.em.find(Visit.class, id);
+		if (v != null && v.getDeletedAt() != null) {
+			return null;
+		}
+		return v;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public Collection<Visit> findAll() throws DataAccessException {
-        return this.em.createQuery("SELECT v FROM Visit v").getResultList();
+        return this.em.createQuery("SELECT v FROM Visit v WHERE v.deletedAt IS NULL").getResultList();
 	}
 
 	@Override
-	public void delete(Visit visit) throws DataAccessException {
-        this.em.remove(this.em.contains(visit) ? visit : this.em.merge(visit));
+	public void softDelete(Visit visit) throws DataAccessException {
+		Visit managed = this.em.contains(visit) ? visit : this.em.merge(visit);
+		managed.setDeletedAt(LocalDateTime.now());
 	}
 
 }

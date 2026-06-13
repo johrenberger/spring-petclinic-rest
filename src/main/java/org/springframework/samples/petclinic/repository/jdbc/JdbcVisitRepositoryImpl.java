@@ -91,7 +91,29 @@ public class JdbcVisitRepositoryImpl implements VisitRepository {
             new JdbcPetRowMapper());
 
         List<Visit> visits = this.namedParameterJdbcTemplate.query(
-            "SELECT id as visit_id, visit_date, description FROM visits WHERE pet_id=:id",
+            "SELECT id as visit_id, visit_date, description FROM visits WHERE pet_id=:id AND deleted_at IS NULL",
+            params, new JdbcVisitRowMapper());
+
+        for (Visit visit : visits) {
+            visit.setPet(pet);
+        }
+
+        return visits;
+    }
+
+    @Override
+    public List<Visit> findByPetIdAndDateBetween(Integer petId, java.time.LocalDate from, java.time.LocalDate to) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", petId);
+        params.put("from", java.sql.Date.valueOf(from));
+        params.put("to", java.sql.Date.valueOf(to));
+        JdbcPet pet = this.namedParameterJdbcTemplate.queryForObject(
+            "SELECT id as pets_id, name, birth_date, type_id, owner_id FROM pets WHERE id=:id",
+            params,
+            new JdbcPetRowMapper());
+
+        List<Visit> visits = this.namedParameterJdbcTemplate.query(
+            "SELECT id as visit_id, visit_date, description FROM visits WHERE pet_id=:id AND visit_date BETWEEN :from AND :to AND deleted_at IS NULL",
             params, new JdbcVisitRowMapper());
 
         for (Visit visit : visits) {
@@ -108,7 +130,7 @@ public class JdbcVisitRepositoryImpl implements VisitRepository {
             Map<String, Object> params = new HashMap<>();
             params.put("id", id);
             visit = this.namedParameterJdbcTemplate.queryForObject(
-                "SELECT id as visit_id, visits.pet_id as pets_id, visit_date, description FROM visits WHERE id= :id",
+                "SELECT id as visit_id, visits.pet_id as pets_id, visit_date, description FROM visits WHERE id= :id AND deleted_at IS NULL",
                 params,
                 new JdbcVisitRowMapperExt());
         } catch (EmptyResultDataAccessException ex) {
@@ -121,7 +143,7 @@ public class JdbcVisitRepositoryImpl implements VisitRepository {
     public Collection<Visit> findAll() throws DataAccessException {
         Map<String, Object> params = new HashMap<>();
         return this.namedParameterJdbcTemplate.query(
-            "SELECT visits.id as visit_id, pets.id as pets_id, visit_date, description FROM visits LEFT JOIN pets ON visits.pet_id = pets.id",
+            "SELECT visits.id as visit_id, pets.id as pets_id, visit_date, description FROM visits LEFT JOIN pets ON visits.pet_id = pets.id WHERE visits.deleted_at IS NULL",
             params, new JdbcVisitRowMapperExt());
     }
 
@@ -138,10 +160,12 @@ public class JdbcVisitRepositoryImpl implements VisitRepository {
     }
 
     @Override
-    public void delete(Visit visit) throws DataAccessException {
+    public void softDelete(Visit visit) throws DataAccessException {
         Map<String, Object> params = new HashMap<>();
         params.put("id", visit.getId());
-        this.namedParameterJdbcTemplate.update("DELETE FROM visits WHERE id=:id", params);
+        params.put("deleted_at", java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+        this.namedParameterJdbcTemplate.update(
+            "UPDATE visits SET deleted_at = :deleted_at WHERE id = :id", params);
     }
 
     protected class JdbcVisitRowMapperExt implements RowMapper<Visit> {

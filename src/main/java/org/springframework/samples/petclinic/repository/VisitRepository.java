@@ -15,6 +15,7 @@
  */
 package org.springframework.samples.petclinic.repository;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -42,12 +43,35 @@ public interface VisitRepository {
      */
     void save(Visit visit) throws DataAccessException;
 
+    /**
+     * Find visits for a pet, excluding any that have been
+     * soft-deleted.
+     */
     List<Visit> findByPetId(Integer petId);
-    
-	Visit findById(int id) throws DataAccessException;
-	
-	Collection<Visit> findAll() throws DataAccessException;
 
-	void delete(Visit visit) throws DataAccessException;
+    /**
+     * Find visits for a pet within a date range, excluding
+     * any that have been soft-deleted.
+     */
+    List<Visit> findByPetIdAndDateBetween(Integer petId, LocalDate from, LocalDate to);
+
+    /**
+     * Find a visit by id, or null if not found or
+     * soft-deleted.
+     */
+    Visit findById(int id) throws DataAccessException;
+
+    /**
+     * Find all visits, excluding any that have been
+     * soft-deleted.
+     */
+    Collection<Visit> findAll() throws DataAccessException;
+
+    /**
+     * Soft-delete a visit. The row is not physically removed;
+     * the {@code deleted_at} column is set to the current
+     * timestamp. Subsequent reads will exclude the visit.
+     */
+    void softDelete(Visit visit) throws DataAccessException;
 
 }

@@ -104,7 +104,7 @@ public class VisitRestControllerV1 implements VisitsApi {
         if (visit == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        this.clinicService.deleteVisit(visit);
+        this.clinicService.softDeleteVisit(visit);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
