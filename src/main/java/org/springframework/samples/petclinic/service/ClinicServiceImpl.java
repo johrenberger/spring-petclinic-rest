@@ -94,8 +94,8 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     @Transactional
-    public void deleteVisit(Visit visit) throws DataAccessException {
-        visitRepository.delete(visit);
+    public void softDeleteVisit(Visit visit) throws DataAccessException {
+        visitRepository.softDelete(visit);
     }
 
     @Override
@@ -246,6 +246,12 @@ public class ClinicServiceImpl implements ClinicService {
     @Transactional(readOnly = true)
     public Collection<Visit> findVisitsByPetId(int petId) {
         return visitRepository.findByPetId(petId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Collection<Visit> findVisitsByPetIdAndDateBetween(int petId, java.time.LocalDate from, java.time.LocalDate to) {
+        return visitRepository.findByPetIdAndDateBetween(petId, from, to);
     }
 
     @Override

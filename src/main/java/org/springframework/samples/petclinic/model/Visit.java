@@ -18,6 +18,7 @@ package org.springframework.samples.petclinic.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Simple JavaBean domain object representing a visit.
@@ -47,6 +48,14 @@ public class Visit extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "pet_id")
     private Pet pet;
+
+    /**
+     * Holds the soft-delete timestamp. Null means the visit
+     * is active; non-null means the visit has been
+     * soft-deleted and should be excluded from queries.
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 
     /**
@@ -109,6 +118,33 @@ public class Visit extends BaseEntity {
      */
     public void setPet(Pet pet) {
         this.pet = pet;
+    }
+
+    /**
+     * Getter for the soft-delete timestamp.
+     *
+     * @return The timestamp at which the visit was
+     *         soft-deleted, or null if active.
+     */
+    public LocalDateTime getDeletedAt() {
+        return this.deletedAt;
+    }
+
+    /**
+     * Setter for the soft-delete timestamp.
+     *
+     * @param deletedAt The soft-delete timestamp.
+     */
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    /**
+     * Computed property: true if the visit has been
+     * soft-deleted.
+     */
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 
 }

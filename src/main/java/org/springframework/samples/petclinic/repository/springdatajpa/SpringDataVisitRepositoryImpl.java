@@ -16,6 +16,8 @@
 
 package org.springframework.samples.petclinic.repository.springdatajpa;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -35,12 +37,9 @@ public class SpringDataVisitRepositoryImpl implements VisitRepositoryOverride {
     private EntityManager em;
 
 	@Override
-	public void delete(Visit visit) throws DataAccessException {
-		String visitId = visit.getId().toString();
-		this.em.createQuery("DELETE FROM Visit visit WHERE id=" + visitId).executeUpdate();
-        if (em.contains(visit)) {
-            em.remove(visit);
-        }
+	public void softDelete(Visit visit) throws DataAccessException {
+		Visit managed = this.em.contains(visit) ? visit : this.em.merge(visit);
+		managed.setDeletedAt(LocalDateTime.now());
 	}
 
 

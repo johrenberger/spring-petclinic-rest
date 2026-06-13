@@ -204,6 +204,21 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @Transactional
+    void shouldFindVisitsByPetIdAndDateBetween() throws Exception {
+        // Pet 7 (Samantha) has 2 visits in the seed data:
+        // 2013-01-01 (rabies shot) and 2013-01-04 (spayed).
+        // Filter to 2013-01-01..2013-01-01 returns exactly 1 visit.
+        // (SQL BETWEEN is inclusive, so we narrow to a single day.)
+        Collection<Visit> visits = this.clinicService.findVisitsByPetIdAndDateBetween(
+            7, LocalDate.of(2013, 1, 1), LocalDate.of(2013, 1, 1));
+        assertThat(visits.size()).isEqualTo(1);
+        Visit visit = visits.iterator().next();
+        assertThat(visit.getPet().getId()).isEqualTo(7);
+        assertThat(visit.getDate()).isEqualTo(LocalDate.of(2013, 1, 1));
+    }
+
+    @Test
     void shouldFindAllPets(){
         Collection<Pet> pets = this.clinicService.findAllPets();
         Pet pet1 = EntityUtils.getById(pets, Pet.class, 1);
@@ -278,13 +293,40 @@ abstract class AbstractClinicServiceTests {
     @Transactional
     void shouldDeleteVisit(){
     	Visit visit = this.clinicService.findVisitById(1);
-        this.clinicService.deleteVisit(visit);
+        this.clinicService.softDeleteVisit(visit);
         try {
         	visit = this.clinicService.findVisitById(1);
 		} catch (Exception e) {
 			visit = null;
 		}
         assertThat(visit).isNull();
+    }
+
+    @Test
+    @Transactional
+    void softDeleteVisit_removesFromFindByPetIdResults() {
+        // Pet 7 (Samantha) has 2 visits in the seed data. Soft-delete
+        // one, then verify findByPetId returns only the other.
+        Visit visitToDelete = this.clinicService.findVisitById(1); // pet 7, 2013-01-01
+        this.clinicService.softDeleteVisit(visitToDelete);
+
+        Collection<Visit> visits = this.clinicService.findVisitsByPetId(7);
+        for (Visit v : visits) {
+            assertThat(v.getId()).isNotEqualTo(1);
+        }
+        assertThat(visits.size()).isEqualTo(1); // one was soft-deleted
+    }
+
+    @Test
+    @Transactional
+    void softDeleteVisit_removesFromFindAllResults() {
+        Visit visitToDelete = this.clinicService.findVisitById(1);
+        this.clinicService.softDeleteVisit(visitToDelete);
+
+        Collection<Visit> allVisits = this.clinicService.findAllVisits();
+        for (Visit v : allVisits) {
+            assertThat(v.getId()).isNotEqualTo(1);
+        }
     }
 
     @Test
