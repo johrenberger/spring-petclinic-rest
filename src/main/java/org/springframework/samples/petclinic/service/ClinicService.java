@@ -44,6 +44,7 @@ public interface ClinicService {
 	void deletePet(Pet pet) throws DataAccessException;
 
 	Collection<Visit> findVisitsByPetId(int petId);
+	Collection<Visit> findVisitsByPetIdAndDateBetween(int petId, java.time.LocalDate from, java.time.LocalDate to);
 	Visit findVisitById(int visitId) throws DataAccessException;
 	Collection<Visit> findAllVisits() throws DataAccessException;
 	void saveVisit(Visit visit) throws DataAccessException;

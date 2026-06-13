@@ -102,6 +102,28 @@ public class JdbcVisitRepositoryImpl implements VisitRepository {
     }
 
     @Override
+    public List<Visit> findByPetIdAndDateBetween(Integer petId, java.time.LocalDate from, java.time.LocalDate to) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", petId);
+        params.put("from", java.sql.Date.valueOf(from));
+        params.put("to", java.sql.Date.valueOf(to));
+        JdbcPet pet = this.namedParameterJdbcTemplate.queryForObject(
+            "SELECT id as pets_id, name, birth_date, type_id, owner_id FROM pets WHERE id=:id",
+            params,
+            new JdbcPetRowMapper());
+
+        List<Visit> visits = this.namedParameterJdbcTemplate.query(
+            "SELECT id as visit_id, visit_date, description FROM visits WHERE pet_id=:id AND visit_date BETWEEN :from AND :to",
+            params, new JdbcVisitRowMapper());
+
+        for (Visit visit : visits) {
+            visit.setPet(pet);
+        }
+
+        return visits;
+    }
+
+    @Override
     public Visit findById(int id) throws DataAccessException {
         Visit visit;
         try {

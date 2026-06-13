@@ -204,6 +204,30 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
+    @Transactional
+    void shouldFindVisitsByPetIdAndDateBetween() throws Exception {
+        // Pet 7 (Samantha) has 2 visits in the seed data:
+        // 2013-01-01 (rabies shot) and 2013-01-04 (spayed).
+        // Filter to 2013-01-01..2013-01-01 returns exactly 1 visit.
+        // (SQL BETWEEN is inclusive, so we narrow to a single day.)
+        Collection<Visit> visits = this.clinicService.findVisitsByPetIdAndDateBetween(
+            7, LocalDate.of(2013, 1, 1), LocalDate.of(2013, 1, 1));
+        assertThat(visits.size()).isEqualTo(1);
+        Visit visit = visits.iterator().next();
+        assertThat(visit.getPet().getId()).isEqualTo(7);
+        assertThat(visit.getDate()).isEqualTo(LocalDate.of(2013, 1, 1));
+    }
+
+    @Test
+    @Transactional
+    void shouldFindAllVisitsByPetIdAndDateBetween_whenNoMatch() throws Exception {
+        // A date range with no visits returns an empty collection.
+        Collection<Visit> visits = this.clinicService.findVisitsByPetIdAndDateBetween(
+            7, LocalDate.of(1990, 1, 1), LocalDate.of(1990, 12, 31));
+        assertThat(visits).isEmpty();
+    }
+
+    @Test
     void shouldFindAllPets(){
         Collection<Pet> pets = this.clinicService.findAllPets();
         Pet pet1 = EntityUtils.getById(pets, Pet.class, 1);

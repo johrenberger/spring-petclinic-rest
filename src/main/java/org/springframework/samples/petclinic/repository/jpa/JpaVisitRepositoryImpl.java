@@ -65,6 +65,16 @@ public class JpaVisitRepositoryImpl implements VisitRepository {
         return query.getResultList();
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<Visit> findByPetIdAndDateBetween(Integer petId, java.time.LocalDate from, java.time.LocalDate to) {
+        Query query = this.em.createQuery("SELECT v FROM Visit v where v.pet.id = :id AND v.date BETWEEN :from AND :to");
+        query.setParameter("id", petId);
+        query.setParameter("from", from);
+        query.setParameter("to", to);
+        return query.getResultList();
+    }
+
 	@Override
 	public Visit findById(int id) throws DataAccessException {
 		return this.em.find(Visit.class, id);

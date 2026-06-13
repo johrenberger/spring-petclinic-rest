@@ -250,6 +250,12 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     @Transactional(readOnly = true)
+    public Collection<Visit> findVisitsByPetIdAndDateBetween(int petId, java.time.LocalDate from, java.time.LocalDate to) {
+        return visitRepository.findByPetIdAndDateBetween(petId, from, to);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Specialty> findSpecialtiesByNameIn(Set<String> names) {
         return findEntityById(() -> specialtyRepository.findSpecialtiesByNameIn(names));
     }
