@@ -16,17 +16,26 @@
 
 package org.springframework.samples.petclinic.rest.controller.v1;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.samples.petclinic.mapper.PetMapper;
+import org.springframework.samples.petclinic.model.Owner;
 import org.springframework.samples.petclinic.model.Pet;
+import org.springframework.samples.petclinic.model.PetType;
 import org.springframework.samples.petclinic.rest.api.PetsApi;
+import org.springframework.samples.petclinic.rest.dto.CreatePetWithOwnerRequest;
 import org.springframework.samples.petclinic.rest.dto.PetDto;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +56,42 @@ public class PetRestControllerV1 implements PetsApi {
     public PetRestControllerV1(ClinicService clinicService, PetMapper petMapper) {
         this.clinicService = clinicService;
         this.petMapper = petMapper;
+    }
+
+    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PostMapping("/pets-with-owner")
+    public ResponseEntity<PetDto> createPetWithOwner(
+            @Valid @RequestBody CreatePetWithOwnerRequest request) {
+        // Build the owner
+        Owner owner = new Owner();
+        owner.setFirstName(request.getOwnerFirstName());
+        owner.setLastName(request.getOwnerLastName());
+        owner.setAddress(request.getOwnerAddress());
+        owner.setCity(request.getOwnerCity());
+        owner.setTelephone(request.getOwnerTelephone());
+        this.clinicService.saveOwner(owner);
+
+        // Build the pet
+        PetType petType = this.clinicService.findPetTypeById(request.getPetTypeId());
+        if (petType == null) {
+            // Defensive guard; Bean Validation should have caught
+            // a non-positive petTypeId, but a positive id that
+            // doesn't exist in the DB is also a 400.
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Pet pet = new Pet();
+        pet.setName(request.getPetName());
+        pet.setBirthDate(request.getPetBirthDate());
+        pet.setType(petType);
+        pet.setOwner(owner);
+        owner.addPet(pet);
+        this.clinicService.savePet(pet);
+
+        PetDto petDto = petMapper.toPetDto(pet);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(UriComponentsBuilder.newInstance()
+            .path("/api/pets/{id}").buildAndExpand(pet.getId()).toUri());
+        return new ResponseEntity<>(petDto, headers, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
