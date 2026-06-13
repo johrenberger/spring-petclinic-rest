@@ -1,3 +1,7 @@
+# DISABLED: This workflow was originally part of spring-petclinic/spring-petclinic-rest
+# Disabled in re-baseline commit on 2026-06-13
+# This fork is operated independently. The original workflow content is below for reference.
+
 name: Newman Smoke testing
   
 on:

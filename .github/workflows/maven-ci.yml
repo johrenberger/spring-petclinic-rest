@@ -1,0 +1,30 @@
+# Maven CI for the independent fork
+# This is the new baseline CI for johrenberger/spring-petclinic-rest
+# Replaces the upstream spring-petclinic/spring-petclinic-rest CI
+
+name: Maven CI (independent)
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.OS }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.OS }}-m2
+      - name: Build and test
+        run: ./mvnw -B verify
