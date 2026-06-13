@@ -15,6 +15,9 @@
  */
 package org.springframework.samples.petclinic.service;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
@@ -76,6 +79,7 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "pets", key = "#pet.id")
     public void deletePet(Pet pet) throws DataAccessException {
         petRepository.delete(pet);
     }
@@ -206,11 +210,22 @@ public class ClinicServiceImpl implements ClinicService {
     @Override
     @Transactional(readOnly = true)
     public Pet findPetById(int id) throws DataAccessException {
+        // NOTE: @Cacheable was prototyped here but removed.
+        // Caching a JPA entity that has eager @OneToMany
+        // associations (Pet.visits) is a known footgun: the
+        // cached object holds a detached JPA session's
+        // children, and a subsequent save/merge sees stale
+        // state. The right answer is either to cache a DTO
+        // here, or to use Spring Data JPA's repository-level
+        // @Cacheable (which understands entity lifecycle).
+        // @CacheEvict annotations on savePet/deletePet are
+        // kept for future use when the cache is reintroduced.
         return findEntityById(() -> petRepository.findById(id));
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "pets", key = "#pet.id")
     public void savePet(Pet pet) throws DataAccessException {
         pet.setType(findPetTypeById(pet.getType().getId()));
         petRepository.save(pet);
