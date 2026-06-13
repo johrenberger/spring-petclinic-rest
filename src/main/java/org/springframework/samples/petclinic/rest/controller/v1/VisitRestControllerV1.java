@@ -30,7 +30,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -60,6 +63,28 @@ public class VisitRestControllerV1 implements VisitsApi {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(new ArrayList<>(visitMapper.toVisitsDto(visits)), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @GetMapping("/pets/{petId}/visits")
+    public ResponseEntity<List<VisitDto>> listVisitsForPet(
+            @PathVariable("petId") Integer petId,
+            @RequestParam(value = "from", required = false) LocalDate from,
+            @RequestParam(value = "to", required = false) LocalDate to) {
+        // 404 if pet does not exist (per acceptance criteria)
+        if (this.clinicService.findPetById(petId) == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        Collection<Visit> visits;
+        if (from != null && to != null) {
+            visits = this.clinicService.findVisitsByPetIdAndDateBetween(petId, from, to);
+        } else {
+            visits = this.clinicService.findVisitsByPetId(petId);
+        }
+        // Sort by visit date descending
+        List<Visit> sorted = new ArrayList<>(visits);
+        sorted.sort(Comparator.comparing(Visit::getDate).reversed());
+        return new ResponseEntity<>(new ArrayList<>(visitMapper.toVisitsDto(sorted)), HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")

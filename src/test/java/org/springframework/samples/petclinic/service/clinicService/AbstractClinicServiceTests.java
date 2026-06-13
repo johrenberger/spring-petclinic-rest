@@ -219,7 +219,16 @@ abstract class AbstractClinicServiceTests {
     }
 
     @Test
-    void shouldFindAllPets(){
+@Transactional
+    void shouldFindAllVisitsByPetIdAndDateBetween_whenNoMatch() throws Exception {
+        // A date range with no visits returns an empty collection.
+        Collection<Visit> visits = this.clinicService.findVisitsByPetIdAndDateBetween(
+            7, LocalDate.of(1990, 1, 1), LocalDate.of(1990, 12, 31));
+        assertThat(visits).isEmpty();
+    }
+
+    @Test
+        void shouldFindAllPets(){
         Collection<Pet> pets = this.clinicService.findAllPets();
         Pet pet1 = EntityUtils.getById(pets, Pet.class, 1);
         assertThat(pet1.getName()).isEqualTo("Leo");
